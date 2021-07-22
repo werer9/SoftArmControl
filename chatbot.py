@@ -33,3 +33,29 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
         )
         print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
 
+
+class Chatbot(object):
+
+    def __init__(self, project_id, session_id, language_code):
+        self.project_id = project_id
+        self.session_id = session_id
+        self.language_code = language_code
+        self.session_client = dialogflow.SessionsClient.from_service_account_json("robotarm-315611-becfd47d7bf3.json")
+        self.session = self.session_client.session_path(self.project_id, self.session_id)
+
+    def get_user_intent(self, texts):
+        for text in texts:
+            text_input = dialogflow.TextInput(text=text, language_code=self.language_code)
+
+            query_input = dialogflow.QueryInput({"text": text_input})
+
+            request = dialogflow.DetectIntentRequest({"session": self.session, "query_input": query_input})
+
+            response = self.session_client.detect_intent(
+                request=request
+            )
+
+            print("{}\n".format(response.query_result.fulfillment_text))
+
+            return [response.query_result.intent.display_name, response.query_result.intent_detection_confidence]
+
