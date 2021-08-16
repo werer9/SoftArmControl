@@ -1,4 +1,4 @@
-from chatbot import *
+from Chatbot.chatbot import *
 
 if __name__ == '__main__':
     chatbot = Chatbot("robotarm-315611", "123", "en")
