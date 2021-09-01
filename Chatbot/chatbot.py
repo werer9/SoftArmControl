@@ -73,5 +73,6 @@ class Chatbot(object):
             wave_file = wave_file.play()
             wave_file.wait_done()
 
-            return [response.query_result.intent.display_name, response.query_result.intent_detection_confidence]
+            return [response.query_result.fulfillment_text, response.query_result.intent.display_name,
+                    response.query_result.intent_detection_confidence]
 
