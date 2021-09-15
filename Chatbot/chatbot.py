@@ -1,7 +1,8 @@
 import os
 
 from google.cloud import dialogflow
-import simpleaudio as sa
+import pyaudio
+import wave
 
 
 def detect_intent_texts(project_id, session_id, texts, language_code):
@@ -38,6 +39,8 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 
 
 class Chatbot(object):
+    CHUNK = 1024
+    RATE = 16000
 
     def __init__(self, project_id, session_id, language_code):
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
@@ -47,6 +50,7 @@ class Chatbot(object):
         self.language_code = language_code
         self.session_client = dialogflow.SessionsClient()
         self.session = self.session_client.session_path(self.project_id, self.session_id)
+        self.p = pyaudio.PyAudio()
 
     def get_user_intent(self, texts):
         for text in texts:
@@ -55,7 +59,8 @@ class Chatbot(object):
             query_input = dialogflow.QueryInput({"text": text_input})
 
             output_audio_config = dialogflow.OutputAudioConfig(
-                audio_encoding=dialogflow.OutputAudioEncoding.OUTPUT_AUDIO_ENCODING_LINEAR_16
+                audio_encoding=dialogflow.OutputAudioEncoding.OUTPUT_AUDIO_ENCODING_LINEAR_16,
+                sample_rate_hertz=self.RATE
             )
 
             request = dialogflow.DetectIntentRequest({"session": self.session, "query_input": query_input,
@@ -66,12 +71,13 @@ class Chatbot(object):
             )
 
             print("{}\n".format(response.query_result.fulfillment_text))
-            with open("output.wav", "wb") as out:
-                out.write(response.output_audio)
-                print('Audio content written to file "output.wav"')
-            wave_file = sa.WaveObject.from_wave_file("output.wav")
-            wave_file = wave_file.play()
-            wave_file.wait_done()
+
+            stream = self.p.open(format=pyaudio.paInt16,
+                                 channels=1,
+                                 rate=self.RATE,
+                                 output=True)
+
+            stream.write(response.output_audio)
 
             return [response.query_result.fulfillment_text, response.query_result.intent.display_name,
                     response.query_result.intent_detection_confidence]
