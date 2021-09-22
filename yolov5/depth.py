@@ -4,13 +4,15 @@
 ###############################################
 #      Open CV and Numpy integration          #
 ###############################################
-from functions import *
-from softArmCMD import *
-from detect import *
-from rotTest import rotCNN
+from yolov5.functions import *
+from yolov5.softArmCMD import *
+from yolov5.detect import *
+from yolov5.rotTest import rotCNN
 from Chatbot.controller import Controller
 from yolov5 import commands
-from Chatbot import chatbot
+#LINE 164 ALSO COMMENTED OUT for CHATBOT
+#from Chatbot import chatbot#############################################
+
 
 
 def depth():
@@ -23,7 +25,7 @@ def depth():
     # load yolov5 softarm detection model
     model = PredictYolo5(**vars(opt))
     # load rotation estimation CNN model
-    rotCNN = rotCNN()
+    rotModel = rotCNN()
     # initialise temporal variables
     first = 1
     tick = 0
@@ -97,10 +99,12 @@ def depth():
             Depthsegment3xBottom, Depthsegment3yBottom = DepthScale(depth_image, color_image, segment3xBottom,
                                                                     segment3yBottom)
             DepthBottomJointx, DepthBottomJointy = DepthScale(depth_image, color_image, bottomJointx, bottomJointy)
+            
             DepthTopJointx, DepthTopJointy = DepthScale(depth_image, color_image, topJointx, topJointy)
             DepthBearX, DepthBearY = DepthScale(depth_image, color_image, bearX, bearY)
             # ################################ draw dots on tracked objects ################################
             humanPresent = 0
+        
             if checkIfPresent(pred, 5):
                 if faceX != 0 and faceY != 0:
                     color_image = cv2.circle(color_image, (faceX, faceY), radius=3, color=(0, 0, 255), thickness=3)
@@ -140,6 +144,7 @@ def depth():
                 color_image = cv2.circle(color_image, (bearX, bearY), radius=3, color=(125, 125, 0), thickness=3)
                 depth_colormap = cv2.circle(depth_colormap, (DepthBearX, DepthBearY), radius=3, color=(125, 125, 0),
                                             thickness=3)
+                                            
             # get joint angles
             angle1 = -int(get_angle(segment2x, segment2y, bottomJointx, bottomJointy))
             angle2 = -int(get_angle(segment3x, segment3y, topJointx, topJointy)) - angle1
@@ -147,7 +152,7 @@ def depth():
 
             angleRotateNew, _ = getRotateAngle(pred, predRowsegment3Bottom, color_image_nobox, color_image,
                                                segment3yBottom,
-                                               segment3xBottom, color_image_old, color_image_old1, rotCNN, oldAngle)
+                                               segment3xBottom, color_image_old, color_image_old1, rotModel, oldAngle)
             oldAngle = angleRotateNew
             if angleRotateNew != -1:
                 angleRotate = angleRotateNew
@@ -156,18 +161,14 @@ def depth():
             # softarmcommands -> [joint angles, rotation angle, command type ] (0 = neutral, 1 = bear,2 = human,
             # 3=headpat. 4 =deflate, 5= speak, 6=wave)
 
-            bot = chatbot.Chatbot("robotarm-315611", "123", "en")
-            [intent_string, _] = bot.get_user_intent([input("Hello, what do you want to do?\n")])
-            if intent_string is "Bear":
-                command = commands.BEAR
-            elif intent_string is "Human":
-                command = commands.HUMAN
-            elif intent_string is "Neutral":
-                command = commands.NEUTRAL
-            else:
-                command = commands.NEUTRAL
-
+           # bot = chatbot.Chatbot("robotarm-315611", "123", "en")
+           # [intent_string, _] = bot.get_user_intent([input("Hello, what do you want to do?\n")])
+            
+            #command = intent_string
+            command = "Human"
+            print("Sending command: ", command)
             # send command to arm
+            print(DepthBottomJointy)
             pastArmCMD, softArmCommands, greenRate, yellowRate, baseRate = sendArmCMD(softArmCommands,
                                                                                       angle1,
                                                                                       angle2, angleRotate, controller,
@@ -189,7 +190,7 @@ def depth():
             fps = 1000000000 / (now - fpsTime)
             fpsTime = time.time_ns()
             color_image = putText(color_image, angle1, angle2, angleRotate, softArmCommands, fps, greenRate, yellowRate,
-                                  baseRate)
+                                  baseRate, command)
 
             if tick == 10:
                 print("angle R: ", angleRotate)
