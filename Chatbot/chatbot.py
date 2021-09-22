@@ -2,7 +2,6 @@ import os
 
 from google.cloud import dialogflow
 import pyaudio
-import wave
 
 
 def detect_intent_texts(project_id, session_id, texts, language_code):
@@ -39,7 +38,7 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 
 
 class Chatbot(object):
-    CHUNK = 1024
+    CHUNK = 4096
     RATE = 16000
 
     def __init__(self, project_id, session_id, language_code):
@@ -48,18 +47,55 @@ class Chatbot(object):
         self.project_id = project_id
         self.session_id = session_id
         self.language_code = language_code
+        self.encoding = dialogflow.OutputAudioEncoding.OUTPUT_AUDIO_ENCODING_LINEAR_16
         self.session_client = dialogflow.SessionsClient()
         self.session = self.session_client.session_path(self.project_id, self.session_id)
         self.p = pyaudio.PyAudio()
+        self.frames = []
 
-    def get_user_intent(self, texts):
+    def get_requests(self):
+        audio_config = dialogflow.InputAudioConfig(
+            audio_encoding=self.encoding,
+            language_code=self.language_code,
+            sample_rate_hertz=self.RATE,
+        )
+
+        output_audio_config = dialogflow.OutputAudioConfig(
+            audio_encoding=self.encoding,
+            sample_rate_hertz=self.RATE
+        )
+
+        query_input = dialogflow.QueryInput(audio_config=audio_config)
+
+        # The first request contains the configuration.
+        yield dialogflow.StreamingDetectIntentRequest(
+            session=self.session, query_input=query_input, output_audio_config=output_audio_config
+        )
+
+        yield dialogflow.StreamingDetectIntentRequest(input_audio=self.frames)
+
+    def get_user_intent_audio(self, frames):
+        self.frames = frames
+        responses = self.session_client.streaming_detect_intent(self.get_requests())
+        input_text = ""
+        for response in responses:
+            input_text = input_text + "\n" + response.recognition_result.transcript
+
+        query_result = response.query_result
+
+        self.play_response(response)
+
+        return [query_result.query_text, query_result.fulfillment_text, query_result.intent.display_name,
+                query_result.intent_detection_confidence]
+
+    def get_user_intent_text(self, texts):
         for text in texts:
             text_input = dialogflow.TextInput(text=text, language_code=self.language_code)
 
             query_input = dialogflow.QueryInput({"text": text_input})
 
             output_audio_config = dialogflow.OutputAudioConfig(
-                audio_encoding=dialogflow.OutputAudioEncoding.OUTPUT_AUDIO_ENCODING_LINEAR_16,
+                audio_encoding=self.encoding,
                 sample_rate_hertz=self.RATE
             )
 
@@ -70,15 +106,15 @@ class Chatbot(object):
                 request=request
             )
 
-            print("{}\n".format(response.query_result.fulfillment_text))
-
-            stream = self.p.open(format=pyaudio.paInt16,
-                                 channels=1,
-                                 rate=self.RATE,
-                                 output=True)
-
-            stream.write(response.output_audio)
+            self.play_response(response)
 
             return [response.query_result.fulfillment_text, response.query_result.intent.display_name,
                     response.query_result.intent_detection_confidence]
 
+    def play_response(self, response):
+        stream = self.p.open(format=pyaudio.paInt16,
+                             channels=1,
+                             rate=self.RATE,
+                             output=True)
+
+        stream.write(response.output_audio)
