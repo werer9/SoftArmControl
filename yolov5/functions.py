@@ -311,7 +311,7 @@ def putText(color_image, angle1, angle2, angleRotate, softArmCommands, fps, gree
 
     if command=="Neutral":
         mode = "neutral"
-    elif command=="Neutral":
+    elif command=="Bear":
         mode = "Bear pointing"
     elif command=="Human":
         mode = "Human pointing"

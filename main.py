@@ -3,8 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 import pyaudio
 import threading
-
-
+from yolov5.depth import *
+import queue
+from intent import intent
 class App(tk.Frame):
     FORMAT = pyaudio.paInt16
     CHUNK = 1024
@@ -16,14 +17,16 @@ class App(tk.Frame):
         self.p = pyaudio.PyAudio()
         self.frames = []
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
+      
+        self.new_intent = intent()
+        self.yolo_thread = threading.Thread(target=depth, args=[self.new_intent])
+        self.yolo_thread.start()
         self.record = False
 
         self.master = master
         self.chatbot = chatbot
         self.pack()
-
-        self.output = tk.StringVar()
-        self.input = tk.StringVar()
+       
 
         self.main_frame = ttk.Frame(self.master, padding="3 3 12 12")
         self.top_frame = ttk.Frame(self.main_frame)
@@ -33,7 +36,7 @@ class App(tk.Frame):
 
         self.bottom_frame = ttk.Frame(self.main_frame)
         self.input_label = ttk.Label(self.bottom_frame, text="Input: ")
-        self.text_input = ttk.Entry(self.bottom_frame, width=40, textvariable=self.input)
+        self.text_input = ttk.Entry(self.bottom_frame, width=40)
         self.text_button = ttk.Button(self.bottom_frame, text="Send", command=self.sendText)
         self.mic_button = ttk.Button(self.bottom_frame, text="Microphone")
         self.mic_button.bind('<ButtonPress-1>', self.start_recording)
@@ -66,9 +69,11 @@ class App(tk.Frame):
         self.text_input.delete(0, 'end')
         self.text_display.insert('end', "User: " + inputData)
         self.text_display['state'] = 'disabled'
-        [outputData, _, _] = self.chatbot.get_user_intent_text([inputData])
+        
+        [self.outputData, intent, _] = self.chatbot.get_user_intent_text([inputData])   
+        self.new_intent.intent = intent
         self.text_display['state'] = 'normal'
-        self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
+        self.text_display.insert('end', "\nChatbot: " + self.outputData + "\n")
         self.text_display['state'] = 'disabled'
 
     def start_recording(self, event):
@@ -80,14 +85,11 @@ class App(tk.Frame):
         self.thread.join()
         data = b''.join(self.frames)
         self.frames = []
-        [inputData, outputData, _, _] = self.chatbot.get_user_intent_audio(data)
-        # self.text_display['state'] = 'normal'
-        # self.text_input.delete(0, 'end')
-        # self.text_display.insert('end', "User: " + inputData)
-        # self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
-        # self.text_display['state'] = 'disabled'
+        [inputData, self.outputData, intent, _] = self.chatbot.get_user_intent_audio(data)
+        self.new_intent.intent = intent
+        print("intent",intent)
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
-
+        
     def record_audio(self, frames: list):
         self.record = True
         stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True,
@@ -104,4 +106,5 @@ if __name__ == '__main__':
     app = App(root)
     record = False
     app.mainloop()
+    
 

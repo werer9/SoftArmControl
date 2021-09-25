@@ -43,7 +43,7 @@ class Chatbot(object):
 
     def __init__(self, project_id, session_id, language_code):
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
-            "C:\\Users\\Caelan\\PycharmProjects\\SoftArmControl\\Chatbot\\robotarm-315611-becfd47d7bf3.json"
+            "C:\\Users\\edmon\\Desktop\\github\\SoftArmControl\\Chatbot\\robotarm-315611-becfd47d7bf3.json"
         self.project_id = project_id
         self.session_id = session_id
         self.language_code = language_code

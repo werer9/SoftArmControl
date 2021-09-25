@@ -10,12 +10,15 @@ from yolov5.detect import *
 from yolov5.rotTest import rotCNN
 from Chatbot.controller import Controller
 from yolov5 import commands
+import queue
+from intent import intent
 #LINE 164 ALSO COMMENTED OUT for CHATBOT
 #from Chatbot import chatbot#############################################
 
 
 
-def depth():
+def depth(new_intent):
+    
     # set softarm controller with IP address of raspberry pi
     controller = Controller("http://172.22.0.75:5000")
     # get yolov5 input args
@@ -36,6 +39,7 @@ def depth():
     oldSegment3PosBottom = [0, 0, 0]
     angleRotate = 0
     init = 1
+    
     try:
         while True:
 
@@ -165,7 +169,11 @@ def depth():
            # [intent_string, _] = bot.get_user_intent([input("Hello, what do you want to do?\n")])
             
             #command = intent_string
-            command = "Human"
+            
+            command  = new_intent.intent
+         
+           
+            
             print("Sending command: ", command)
             # send command to arm
             print(DepthBottomJointy)
@@ -212,10 +220,15 @@ def depth():
             # Show images
             cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
             cv2.imshow('RealSense', images)
-            cv2.waitKey(1)
+            key =cv2.waitKey(1)
             tick += 1
+            #keep past frame for denoise
             color_image_old1 = color_image_old.copy()
             color_image_old = color_image_nobox.copy()
+            #destroy window
+            if key & 0xFF == ord('q') or key == 27:
+                cv2.destroyAllWindows()
+                break
 
 
     finally:
