@@ -216,7 +216,9 @@ def depth(new_intent):
                 else:
                     images = np.hstack((color_image, depth_colormap))
             else:
-                images = color_image
+                h,w,_= color_image.shape
+                scale=1
+                images = cv2.resize(color_image,(int(w*scale),int(h*scale)))
             # Show images
             cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
             cv2.imshow('RealSense', images)

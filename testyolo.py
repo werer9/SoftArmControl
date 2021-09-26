@@ -1,4 +1,5 @@
 from yolov5.depth import *
-
+from intent import intent
 if __name__ == '__main__':
-    depth()
+    new_intent = intent()
+    depth(new_intent)
