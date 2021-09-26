@@ -22,9 +22,6 @@ class App(tk.Frame):
         self.chatbot = chatbot
         self.pack()
 
-        self.output = tk.StringVar()
-        self.input = tk.StringVar()
-
         self.main_frame = ttk.Frame(self.master, padding="3 3 12 12")
         self.top_frame = ttk.Frame(self.main_frame)
         self.label_display = ttk.Label(self.top_frame, text="Chatbot Text Output")
@@ -33,7 +30,7 @@ class App(tk.Frame):
 
         self.bottom_frame = ttk.Frame(self.main_frame)
         self.input_label = ttk.Label(self.bottom_frame, text="Input: ")
-        self.text_input = ttk.Entry(self.bottom_frame, width=40, textvariable=self.input)
+        self.text_input = ttk.Entry(self.bottom_frame, width=40)
         self.text_button = ttk.Button(self.bottom_frame, text="Send", command=self.sendText)
         self.mic_button = ttk.Button(self.bottom_frame, text="Microphone")
         self.mic_button.bind('<ButtonPress-1>', self.start_recording)
@@ -80,12 +77,12 @@ class App(tk.Frame):
         self.thread.join()
         data = b''.join(self.frames)
         self.frames = []
-        [inputData, outputData, _, _] = self.chatbot.get_user_intent_audio(data)
-        # self.text_display['state'] = 'normal'
-        # self.text_input.delete(0, 'end')
-        # self.text_display.insert('end', "User: " + inputData)
-        # self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
-        # self.text_display['state'] = 'disabled'
+        [inputData, outputData, intent, _] = self.chatbot.get_user_intent_audio(data)
+        self.text_display['state'] = 'normal'
+        self.text_input.delete(0, 'end')
+        self.text_display.insert('end', "User: " + inputData)
+        self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
+        self.text_display['state'] = 'disabled'
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
 
     def record_audio(self, frames: list):

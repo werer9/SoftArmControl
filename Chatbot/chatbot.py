@@ -65,23 +65,22 @@ class Chatbot(object):
             sample_rate_hertz=self.RATE
         )
 
-        query_input = dialogflow.QueryInput(audio_config=audio_config)
+        query_input = dialogflow.QueryInput({"audio_config": audio_config})
 
         # The first request contains the configuration.
         yield dialogflow.StreamingDetectIntentRequest(
-            session=self.session, query_input=query_input, output_audio_config=output_audio_config
+            {"session": self.session, "query_input": query_input, "output_audio_config": output_audio_config}
         )
 
-        yield dialogflow.StreamingDetectIntentRequest(input_audio=self.frames)
+        yield dialogflow.StreamingDetectIntentRequest({"input_audio": self.frames})
 
     def get_user_intent_audio(self, frames):
         self.frames = frames
         responses = self.session_client.streaming_detect_intent(self.get_requests())
-        input_text = ""
+        query_result = None
         for response in responses:
-            input_text = input_text + "\n" + response.recognition_result.transcript
-
-        query_result = response.query_result
+            if response.query_result.fulfillment_text is not "":
+                query_result = response.query_result
 
         self.play_response(response)
 
