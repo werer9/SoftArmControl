@@ -12,6 +12,12 @@ class App(tk.Frame):
     CHANNELS = 1
 
     def __init__(self, master=None, chatbot: Chatbot = Chatbot("robotarm-315611", "123", "en")):
+        """
+        Initialise the chatbot window
+        :param master: Tkinter session
+        :param chatbot: chatbot instance
+        """
+        # Create the window and start a new thread to listen to audio
         super().__init__(master)
         self.p = pyaudio.PyAudio()
         self.frames = []
@@ -22,6 +28,7 @@ class App(tk.Frame):
         self.chatbot = chatbot
         self.pack()
 
+        # Create the main window frame
         self.main_frame = ttk.Frame(self.master, padding="3 3 12 12")
         self.top_frame = ttk.Frame(self.main_frame)
         self.label_display = ttk.Label(self.top_frame, text="Chatbot Text Output")
@@ -39,6 +46,10 @@ class App(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
+        """
+        Create widgets and position them
+        :return:
+        """
         self.master.title("Chatbot Controller")
         self.main_frame.pack()
 
@@ -58,26 +69,46 @@ class App(tk.Frame):
         self.bottom_frame.grid(column=0, row=1)
 
     def sendText(self):
+        """
+        Send text input to the chatbot and display the input and response in the window
+        :return:
+        """
+        # Get string from input box
         inputData = self.text_input.get()
+        # Write input text to the text display
         self.text_display['state'] = 'normal'
         self.text_input.delete(0, 'end')
         self.text_display.insert('end', "User: " + inputData)
         self.text_display['state'] = 'disabled'
+        # Get the text response from google and write to text display
         [outputData, _, _] = self.chatbot.get_user_intent_text([inputData])
         self.text_display['state'] = 'normal'
         self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
         self.text_display['state'] = 'disabled'
 
     def start_recording(self, event):
+        """
+        Start new thread to listen to microphone input
+        :param event:
+        :return:
+        """
         self.thread.start()
         return
 
     def stop_recording(self, event):
+        """
+        Stop listening to microphone input
+        :param event:
+        :return:
+        """
+        # Tell recording thread to stop, wait for it to stop and then store audio input data
         self.record = False
         self.thread.join()
         data = b''.join(self.frames)
         self.frames = []
+        # Send audio input data to google cloud and get the response
         [inputData, outputData, intent, _] = self.chatbot.get_user_intent_audio(data)
+        # Write the audio input and output transcript to the text display
         self.text_display['state'] = 'normal'
         self.text_input.delete(0, 'end')
         self.text_display.insert('end', "User: " + inputData)
@@ -86,9 +117,16 @@ class App(tk.Frame):
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
 
     def record_audio(self, frames: list):
+        """
+        Record microphone input
+        :param frames: List of buffers
+        :return:
+        """
+        # Tell thread to loop and open input stream
         self.record = True
         stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True,
                              frames_per_buffer=self.CHUNK)
+        # Keep looping (reading audio input) until stop recording function is called in main thread
         while self.record:
             data = stream.read(self.CHUNK)
             frames.append(data)
@@ -97,6 +135,7 @@ class App(tk.Frame):
 
 
 if __name__ == '__main__':
+    # Create new tkinter app and run it
     root = tk.Tk()
     app = App(root)
     record = False
