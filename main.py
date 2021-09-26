@@ -3,8 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 import pyaudio
 import threading
-
-
+from yolov5.depth import *
+import queue
+from intent import intent
 class App(tk.Frame):
     FORMAT = pyaudio.paInt16
     CHUNK = 1024
@@ -22,6 +23,10 @@ class App(tk.Frame):
         self.p = pyaudio.PyAudio()
         self.frames = []
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
+      
+        self.new_intent = intent()
+        self.yolo_thread = threading.Thread(target=depth, args=[self.new_intent])
+        self.yolo_thread.start()
         self.record = False
 
         self.master = master
@@ -80,10 +85,12 @@ class App(tk.Frame):
         self.text_input.delete(0, 'end')
         self.text_display.insert('end', "User: " + inputData)
         self.text_display['state'] = 'disabled'
+        
         # Get the text response from google and write to text display
-        [outputData, _, _] = self.chatbot.get_user_intent_text([inputData])
+        [self.outputData, intent, _] = self.chatbot.get_user_intent_text([inputData])   
+        self.new_intent.intent = intent
         self.text_display['state'] = 'normal'
-        self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
+        self.text_display.insert('end', "\nChatbot: " + self.outputData + "\n")
         self.text_display['state'] = 'disabled'
 
     def start_recording(self, event):
@@ -113,9 +120,10 @@ class App(tk.Frame):
         self.text_input.delete(0, 'end')
         self.text_display.insert('end', "User: " + inputData)
         self.text_display.insert('end', "\nChatbot: " + outputData + "\n")
-        self.text_display['state'] = 'disabled'
+        self.new_intent.intent = intent
+        print("intent",intent)
         self.thread = threading.Thread(target=self.record_audio, args=[self.frames])
-
+        
     def record_audio(self, frames: list):
         """
         Record microphone input
@@ -140,4 +148,5 @@ if __name__ == '__main__':
     app = App(root)
     record = False
     app.mainloop()
+    
 

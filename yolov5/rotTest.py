@@ -9,7 +9,7 @@ import torchvision.transforms.functional as TF
 class rotCNN(object):
     def __init__(self):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        PATH = "./models/rotation"
+        PATH = "./yolov5/weights/rotation"
         self.model = torch.load(PATH).to(device)
         self.model.eval()
         print("LOADED rotationCNN")
