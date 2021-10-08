@@ -32,7 +32,7 @@ def pointAtBear(softArmCommands, bearX, bearY, DepthBearX, DepthBearY, depth_ima
 
 
 def trySendCMD(greenRate, yellowRate, baseRate, controller):
-    if(0):
+    if(1):
         controller.set_green(float(greenRate))
         controller.set_yellow(float(yellowRate))
         controller.set_base(float(baseRate))
@@ -89,17 +89,22 @@ def sendArmCMD(softArmCommands, angle1, angle2, angleRotate, controller, command
         rotateAngle = softArmCommands[1]
         inflationRate = 1
         if(angle!=0):
-            greenRate =-max( min(((angle1+angle2)-angle)/20 ,1),-1)
+            greenRate =-max( min(((angle1+angle2)-angle)/20 ,1),-1) 
+            if(greenRate>0):
+                greenRate=1
             if( greenRate> -0.9 and greenRate<0):
                 greenRate=0    
+            elif(greenRate<0):
+                greenRate=-1
         else:
-            greenRate=0       
-        if(angle!=0):
+            greenRate=0     
+        yellowRate= -greenRate
+        ''' if(angle!=0):
             yellowRate =-max( min(((angle1+angle2)-angle)/20 ,1),-1)
             if(yellowRate> -0.9 and yellowRate<0):
                 yellowRate=0       
         else:
-            yellowRate=0
+            yellowRate=0'''
         #base rotation
         if(rotateAngle!=0):
             baseRate= -(max(min(float(1- (angleRotate/rotateAngle)), 1),-1))
@@ -107,8 +112,10 @@ def sendArmCMD(softArmCommands, angle1, angle2, angleRotate, controller, command
             #    baseRate = -1*baseRate           
         else:
             baseRate=0
-          
-        sendAngleCMD(-greenRate, yellowRate, baseRate * 0.4, inflationRate, controller)
+        #yellowRate= 0
+        greenRate=0
+        baseRate= 0
+        sendAngleCMD(greenRate, yellowRate, baseRate * 0.4, inflationRate, controller)
     elif command == "Human":
         print("mode 2 human")
         angle = softArmCommands[0]
@@ -133,7 +140,7 @@ def sendArmCMD(softArmCommands, angle1, angle2, angleRotate, controller, command
             #    baseRate = -1*baseRate           
         else:
             baseRate=0
-        sendAngleCMD(-greenRate, yellowRate, baseRate * 0.4, inflationRate, controller)
+        sendAngleCMD(greenRate, yellowRate, baseRate * 0.4, inflationRate, controller)
     elif command == "Headpat":
         print("mode 3 headpat")
     else:

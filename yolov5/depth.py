@@ -20,7 +20,8 @@ from intent import intent
 def depth(new_intent):
     
     # set softarm controller with IP address of raspberry pi
-    controller = Controller("http://172.22.0.75:5000")
+    #controller = Controller("http://172.22.0.75:5000")
+    controller = Controller("http://192.168.1.20:5000")
     # get yolov5 input args
     opt = getInputArgs()
     # initialise intel realsense pipeline

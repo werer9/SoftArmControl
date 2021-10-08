@@ -38,6 +38,7 @@ class Controller:
         self.verify_data()
         self.params = {"base": f"{self.base}", "green": f"{self.green}", "yellow": f"{self.yellow}",
                        "rigid": f"{self.rigid}", "misc": "0.0"}
+        #requests.get(self.url, params=self.params,timeout=1)
         requests.get(self.url, params=self.params)
 
     def stop_movement(self):
